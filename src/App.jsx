@@ -1294,9 +1294,9 @@ export default function App() {
               <Btn color="#1368ce" onClick={copyRanking}>
                 {copySuccess ? "✓ Copiado!" : "📋 Copiar Ranking"}
               </Btn>
-              <Btn color="#d89e00" onClick={copyShareLink}>
+              {isHost && <Btn color="#d89e00" onClick={copyShareLink}>
                 {shareLinkCopied ? "✓ Link Copiado!" : "🔗 Compartilhar Quiz"}
-              </Btn>
+              </Btn>}
               <Btn big color="#e21b3c" onClick={goHome}>
                 🏠 Voltar ao Início
               </Btn>
