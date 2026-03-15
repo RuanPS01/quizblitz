@@ -245,6 +245,7 @@ export default function App() {
   const screenRef = useRef("home");
   const showCorrectRef = useRef(false);
   const isRejoinRef = useRef(false);
+  const hasNotifiedServer = useRef(false);
 
   // Keep refs in sync
   useEffect(() => { quizRef.current = quiz; }, [quiz]);
@@ -335,18 +336,16 @@ export default function App() {
           }
           return p;
         });
-        setTimeout(() => {
-          send({
-            type: "SYNC_STATE",
-            targetPlayer: msg.name,
-            screen: screenRef.current,
-            quiz: quizRef.current,
-            currentQ: currentQRef.current,
-            timeLeft: timeLeftRef.current,
-            players: playersRef.current,
-            showCorrect: showCorrectRef.current,
-          });
-        }, 500);
+        send({
+          type: "SYNC_STATE",
+          targetPlayer: msg.name,
+          screen: screenRef.current,
+          quiz: quizRef.current,
+          currentQ: currentQRef.current,
+          timeLeft: timeLeftRef.current,
+          players: playersRef.current,
+          showCorrect: showCorrectRef.current,
+        });
         break;
       case "SYNC_STATE":
         if (asHost) break;
@@ -538,15 +537,16 @@ export default function App() {
 
   // Notify host about player joining or rejoining
   useEffect(() => {
-    if (screen === "player-lobby" && roomCode && playerName && !isHost) {
+    if (roomCode && playerName && !isHost && !hasNotifiedServer.current) {
       if (isRejoinRef.current) {
         send({ type: "PLAYER_REJOIN", name: playerName.trim() });
         isRejoinRef.current = false;
       } else {
         send({ type: "PLAYER_JOIN", name: playerName.trim() });
       }
+      hasNotifiedServer.current = true;
     }
-  }, [screen, roomCode, playerName, isHost, send]);
+  }, [roomCode, playerName, isHost, send]);
 
   // ─── Host: Start Game ───
   function handleStartGame() {
@@ -764,6 +764,7 @@ export default function App() {
     setShareLinkCopied(false);
     setCopySuccess(false);
     setQrFullscreen(false);
+    hasNotifiedServer.current = false;
   }
 
   // ════════════════════════════════════════════
@@ -776,6 +777,17 @@ export default function App() {
       {screen === "countdown" && countdownVal >= 0 && <CountdownOverlay count={countdownVal} />}
 
       <div className="app-content">
+
+        {/* Loading state for rejoining players */}
+        {!isHost && !quiz && ["question", "answer-result", "scoreboard", "final"].includes(screen) && (
+          <div className="screen-center">
+            <div className="glass-card anim-pop" style={{ textAlign: "center" }}>
+              <div className="pulse-dot" style={{ margin: "0 auto 16px", width: "20px", height: "20px" }} />
+              <p style={{ fontWeight: 700, fontSize: "20px" }}>Sincronizando...</p>
+              <p className="text-muted" style={{ marginTop: "8px" }}>Buscando dados do quiz...</p>
+            </div>
+          </div>
+        )}
 
         {/* ═══ HOME ═══ */}
         {screen === "home" && (
